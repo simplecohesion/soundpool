@@ -105,6 +105,13 @@ public class SwiftSoundpoolPlugin: NSObject, FlutterPlugin {
                 //do nothing
                 print("Error while trying to set audio category: '\(e)'")
             }
+            do {
+                try AVAudioSession.sharedInstance().setPreferredIOBufferDuration(0.0012)
+                print("Audio session updated: preferred buffer duration")
+            } catch (let e) {
+                //do nothing
+                print("Error while trying to set preferred buffer duration: '\(e)'")
+            }
         }
     }
     
