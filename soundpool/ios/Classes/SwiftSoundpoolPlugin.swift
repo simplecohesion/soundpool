@@ -23,7 +23,7 @@ public class SwiftSoundpoolPlugin: NSObject, FlutterPlugin {
             initAudioSession(attributes)
             
             let maxStreams = attributes["maxStreams"] as! Int
-            let enableRate = (attributes["ios_enableRate"] as? Bool) ?? true
+            let enableRate = (attributes["ios_enableRate"] as? Bool) ?? false
             let wrapper = SoundpoolWrapper(maxStreams, enableRate)
             
             let index = counter.increment()
@@ -199,55 +199,57 @@ public class SwiftSoundpoolPlugin: NSObject, FlutterPlugin {
                 let rate = (attributes["rate"] as? Double) ?? 1.0
                 if (soundId < 0){
                     result(0)
-                    break
+                    return
                 }
                 
                 guard var audioPlayer = playerBySoundId(soundId: soundId) else {
                     result(0)
-                    break
+                    return
                 }
-                do {
-                    let currentCount = streamsCount[soundId] ?? 0
-                    
-                    if (currentCount >= maxStreams){
+                DispatchQueue.global(qos: .userInitiated).async {
+                    do {
+                        let currentCount = self.streamsCount[soundId] ?? 0
+                        
+                        if (currentCount >= self.maxStreams){
+                            result(0)
+                            return
+                        }
+                        
+                        let nowPlayingData: NowPlaying
+                        let streamId: Int = self.streamIdProvider.increment()
+                        
+                        let delegate = SoundpoolDelegate(pool: self, soundId: soundId, streamId: streamId)
+                        audioPlayer.delegate = delegate
+                        nowPlayingData =  NowPlaying(player: audioPlayer, delegate: delegate)
+                        
+                        // audioPlayer.numberOfLoops = times ?? 0
+                        // if (self.enableRate){
+                        //     audioPlayer.enableRate = true
+                        //     audioPlayer.rate = Float(rate)
+                        // }
+                        
+                        if (audioPlayer.play()) {
+                            self.streamsCount[soundId] = currentCount + 1
+                            self.nowPlaying[streamId] = nowPlayingData
+                            result(streamId)
+                        } else {
+                            result(0) // failed to play sound
+                        }
+                        // lets recreate the audioPlayer for next request - setting numberOfLoops has initially no effect
+                        
+                        // if let previousData = audioPlayer.data {
+                        //     audioPlayer = try AVAudioPlayer(data: previousData)
+                        // } else if let previousUrl = audioPlayer.url {
+                        //     audioPlayer = try AVAudioPlayer(contentsOf: previousUrl)
+                        // }
+                        // if (self.enableRate){
+                        //     audioPlayer.enableRate = true
+                        // }
+                        // audioPlayer.prepareToPlay()
+                        // self.soundpool[soundId] = audioPlayer
+                    } catch {
                         result(0)
-                        break
                     }
-                    
-                    let nowPlayingData: NowPlaying
-                    let streamId: Int = streamIdProvider.increment()
-                    
-                    let delegate = SoundpoolDelegate(pool: self, soundId: soundId, streamId: streamId)
-                    audioPlayer.delegate = delegate
-                    nowPlayingData =  NowPlaying(player: audioPlayer, delegate: delegate)
-                    
-                    audioPlayer.numberOfLoops = times ?? 0
-                    if (enableRate){
-                        audioPlayer.enableRate = true
-                        audioPlayer.rate = Float(rate)
-                    }
-                    
-                    if (audioPlayer.play()) {
-                        streamsCount[soundId] = currentCount + 1
-                        nowPlaying[streamId] = nowPlayingData
-                        result(streamId)
-                    } else {
-                        result(0) // failed to play sound
-                    }
-                    // lets recreate the audioPlayer for next request - setting numberOfLoops has initially no effect
-                    
-                    if let previousData = audioPlayer.data {
-                        audioPlayer = try AVAudioPlayer(data: previousData)
-                    } else if let previousUrl = audioPlayer.url {
-                        audioPlayer = try AVAudioPlayer(contentsOf: previousUrl)
-                    }
-                    if (enableRate){
-                        audioPlayer.enableRate = true
-                    }
-                    audioPlayer.prepareToPlay()
-                    soundpool[soundId] = audioPlayer
-                } catch {
-                    result(0)
                 }
             case "pause":
                 let streamId = attributes["streamId"] as! Int
