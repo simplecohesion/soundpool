@@ -22,12 +22,14 @@ class SoundpoolPlugin extends SoundpoolPlatform {
   void _checkSupported() {
     final supported = audio.AudioContext.supported;
     if (!supported) {
-      throw UnsupportedError('Required AudioContext API is not supported by this browser.');
+      throw UnsupportedError(
+          'Required AudioContext API is not supported by this browser.');
     }
   }
 
   @override
-  Future<int> init(int streamType, int maxStreams, Map<String, dynamic> options) async {
+  Future<int> init(
+      int streamType, int maxStreams, Map<String, dynamic> options) async {
     _checkSupported();
     // stream type and streams limit are not supported
     var wrapperIndex = _pool.length + 1;
@@ -36,7 +38,8 @@ class SoundpoolPlugin extends SoundpoolPlatform {
   }
 
   @override
-  Future<int> loadUint8List(int poolId, Uint8List rawSound, int priority) async {
+  Future<int> loadUint8List(
+      int poolId, Uint8List rawSound, int priority) async {
     Uint8List rawSoundCopy = Uint8List.fromList(rawSound);
     int id = poolId;
     _AudioContextWrapper wrapper = _pool[id]!;
@@ -74,8 +77,8 @@ class SoundpoolPlugin extends SoundpoolPlatform {
   }
 
   @override
-  Future<void> setVolume(
-      int poolId, int? soundId, int? streamId, double? volumeLeft, double? volumeRight) async {
+  Future<void> setVolume(int poolId, int? soundId, int? streamId,
+      double? volumeLeft, double? volumeRight) async {
     _AudioContextWrapper wrapper = _pool[poolId]!;
     if (streamId == null) {
       await wrapper.setVolume(soundId!, volumeLeft, volumeRight);
@@ -85,7 +88,8 @@ class SoundpoolPlugin extends SoundpoolPlatform {
   }
 
   @override
-  Future<void> setRate(int poolId, int streamId, [double playbackRate = 1.0]) async {
+  Future<void> setRate(int poolId, int streamId,
+      [double playbackRate = 1.0]) async {
     _AudioContextWrapper wrapper = _pool[poolId]!;
     wrapper.setStreamRate(streamId, playbackRate);
   }
@@ -97,7 +101,7 @@ class SoundpoolPlugin extends SoundpoolPlatform {
 class _AudioContextWrapper {
   late audio.AudioContext audioContext;
   void _initContext() {
-      audioContext = audio.AudioContext();
+    audioContext = audio.AudioContext();
   }
 
   Map<int, _CachedAudioSettings> _cache = {};
@@ -154,7 +158,8 @@ class _AudioContextWrapper {
     sampleSource.start();
 
     if (repeat > 0) {
-      sampleSource.stop((audioContext.currentTime ?? 0.0) + (audioBuffer.duration ?? 0.0) * (repeat + 1));
+      sampleSource.stop((audioContext.currentTime ?? 0.0) +
+          (audioBuffer.duration ?? 0.0) * (repeat + 1));
     }
     return streamId;
   }
@@ -165,16 +170,20 @@ class _AudioContextWrapper {
     audioWrapper?.sourceNode?.stop();
   }
 
-  Future<void> setVolume(int soundId, double? volumeLeft, double? volumeRight) async {
+  Future<void> setVolume(
+      int soundId, double? volumeLeft, double? volumeRight) async {
     _CachedAudioSettings? cachedAudio = _cache[soundId];
     if (volumeLeft != null) cachedAudio?.volumeLeft = volumeLeft;
     if (volumeRight != null) cachedAudio?.volumeRight = volumeRight;
-    _playedAudioCache.values.where((pw) => pw.soundId == soundId).forEach((playingWrapper) {
+    _playedAudioCache.values
+        .where((pw) => pw.soundId == soundId)
+        .forEach((playingWrapper) {
       playingWrapper.gainNode.gain?.value = volumeLeft;
     });
   }
 
-  Future<void> setStreamVolume(int streamId, double? volumeLeft, double? volumeRight) async {
+  Future<void> setStreamVolume(
+      int streamId, double? volumeLeft, double? volumeRight) async {
     _PlayingAudioWrapper? playingWrapper = _playedAudioCache[streamId];
     if (playingWrapper != null) {
       playingWrapper.gainNode.gain?.value = volumeLeft;
@@ -205,7 +214,8 @@ class _CachedAudioSettings {
   final audio.AudioBuffer buffer;
   double volumeLeft;
   double volumeRight;
-  _CachedAudioSettings({required this.buffer, this.volumeLeft = 1.0, this.volumeRight = 1.0});
+  _CachedAudioSettings(
+      {required this.buffer, this.volumeLeft = 1.0, this.volumeRight = 1.0});
 }
 
 class _PlayingAudioWrapper {
@@ -214,5 +224,8 @@ class _PlayingAudioWrapper {
   final StreamSubscription? subscription;
   final int soundId;
   const _PlayingAudioWrapper(
-      {required this.sourceNode, required this.gainNode, this.subscription, required this.soundId});
+      {required this.sourceNode,
+      required this.gainNode,
+      this.subscription,
+      required this.soundId});
 }
