@@ -194,22 +194,8 @@ internal class SoundpoolWrapper(private val context: Context, private val maxStr
                 loadExecutor.execute {
                     try {
                         val arguments = call.arguments as Map<String, Any>
-                        val soundUri = arguments["uri"] as String
-                        val priority = arguments["priority"] as Int
-                        val soundId =
-                                URI.create(soundUri).let { uri ->
-                                    return@let if (uri.scheme == "content") {
-                                        soundPool.load(context.contentResolver.openAssetFileDescriptor(Uri.parse(soundUri), "r"), 1)
-                                    } else {
-                                        val tempFile = createTempFile(prefix = "sound", suffix = "pool", directory = context.cacheDir)
-                                        FileOutputStream(tempFile).use { out ->
-                                            out.write(uri.toURL().readBytes())
-                                        }
-                                        tempFile.deleteOnExit()
-                                        soundPool.load(tempFile.absolutePath, priority)
-                                    }
-                                }
-
+                        val uriPath = arguments["uri"] as String
+                        val soundId = soundPool.load(uriPath, 1)
                         if (soundId > -1) {
                             loadingSoundsMap[soundId] = result
                         } else {
