@@ -20,7 +20,10 @@ dependencies:
     git:
       url: https://github.com/simplecohesion/soundpool
       path: soundpool_web
-  soundpool_macos: ^2.2.0
+  soundpool_macos:
+    git:
+      url: https://github.com/simplecohesion/soundpool
+      path: soundpool_macos
 
 flutter:
   plugin:
