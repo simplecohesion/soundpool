@@ -136,11 +136,12 @@ packages:
   soundpool_platform_interface:
     dependency: "direct main"
     description:
-      name: soundpool_platform_interface
-      sha256: "9787f96b54a12e236cd3715cd2cc4bcd1fc1131e834ea7b295ac849ab4e24eab"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.0"
+      path: soundpool_platform_interface
+      ref: HEAD
+      resolved-ref: f61ef3c608e0ed04201127c83ab4b055607654e8
+      url: "https://github.com/simplecohesion/soundpool"
+    source: git
+    version: "2.5.0"
   source_span:
     dependency: transitive
     description:
