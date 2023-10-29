@@ -5,6 +5,7 @@ homepage: https://github.com/ukasz123/soundpool/tree/master/soundpool
 publish_to: none
 
 environment:
+  flutter: ">=3.10.0"
   sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
