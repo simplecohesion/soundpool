@@ -21,6 +21,7 @@ dependencies:
     git:
       url: https://github.com/simplecohesion/soundpool
       path: soundpool_platform_interface
+  web: ^0.5.1
 
 dev_dependencies:
   flutter_test:
