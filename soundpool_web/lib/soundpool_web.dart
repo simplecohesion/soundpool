@@ -1,9 +1,12 @@
 /// @nodoc
+// ignore_for_file: unused_element
+
 library soundpool_web;
 
 import 'dart:async';
+import 'dart:js_interop';
 // ignore: uri_does_not_exist
-import 'dart:web_audio' as audio;
+import 'package:web/web.dart';
 import 'dart:typed_data';
 import 'dart:core';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
@@ -20,11 +23,11 @@ class SoundpoolPlugin extends SoundpoolPlatform {
   final Map<int, _AudioContextWrapper> _pool = {};
 
   void _checkSupported() {
-    final supported = audio.AudioContext.supported;
-    if (!supported) {
-      throw UnsupportedError(
-          'Required AudioContext API is not supported by this browser.');
-    }
+    // final supported = AudioContext.supported;
+    // if (!supported) {
+    //   throw UnsupportedError(
+    //       'Required AudioContext API is not supported by this browser.');
+    // }
   }
 
   @override
@@ -99,9 +102,9 @@ class SoundpoolPlugin extends SoundpoolPlatform {
 }
 
 class _AudioContextWrapper {
-  late audio.AudioContext audioContext;
+  late AudioContext audioContext;
   void _initContext() {
-    audioContext = audio.AudioContext();
+    audioContext = AudioContext();
   }
 
   Map<int, _CachedAudioSettings> _cache = {};
@@ -110,7 +113,8 @@ class _AudioContextWrapper {
 
   Future<int> load(ByteBuffer buffer) async {
     _initContext();
-    audio.AudioBuffer audioBuffer = await audioContext.decodeAudioData(buffer);
+    AudioBuffer audioBuffer =
+        await audioContext.decodeAudioData(buffer.toJS).toDart;
     int currentSize = _cache.length;
     _cache[currentSize + 1] = _CachedAudioSettings(buffer: audioBuffer);
     return currentSize + 1;
@@ -124,22 +128,20 @@ class _AudioContextWrapper {
 
   Future<int> play(int soundId, {double rate = 1.0, int repeat = 0}) async {
     _CachedAudioSettings cachedAudio = _cache[soundId]!;
-    audio.AudioBuffer audioBuffer = cachedAudio.buffer;
+    AudioBuffer audioBuffer = cachedAudio.buffer;
     var playbackRate = rate;
 
     var sampleSource = audioContext.createBufferSource();
     sampleSource.buffer = audioBuffer;
     // updating playback rate
-    sampleSource.playbackRate?.value = playbackRate;
+    sampleSource.playbackRate.value = playbackRate;
     // gain node for setting volume level
     var gainNode = audioContext.createGain();
-    gainNode.gain?.value = cachedAudio.volumeLeft;
+    gainNode.gain.value = cachedAudio.volumeLeft;
 
-    sampleSource.connectNode(gainNode);
+    sampleSource.connect(gainNode);
     final destination = audioContext.destination;
-    if (destination != null) {
-      gainNode.connectNode(destination);
-    }
+    gainNode.connect(destination);
     _lastPlayedStreamId = _lastPlayedStreamId + 1;
     var streamId = _lastPlayedStreamId;
     var subscription = sampleSource.onEnded.listen((_) {
@@ -158,8 +160,8 @@ class _AudioContextWrapper {
     sampleSource.start();
 
     if (repeat > 0) {
-      sampleSource.stop((audioContext.currentTime ?? 0.0) +
-          (audioBuffer.duration ?? 0.0) * (repeat + 1));
+      sampleSource.stop(
+          (audioContext.currentTime) + (audioBuffer.duration) * (repeat + 1));
     }
     return streamId;
   }
@@ -167,7 +169,7 @@ class _AudioContextWrapper {
   Future<void> stop(int streamId) async {
     _PlayingAudioWrapper? audioWrapper = _playedAudioCache.remove(streamId);
     audioWrapper?.subscription?.cancel();
-    audioWrapper?.sourceNode?.stop();
+    audioWrapper?.sourceNode.stop();
   }
 
   Future<void> setVolume(
@@ -178,7 +180,8 @@ class _AudioContextWrapper {
     _playedAudioCache.values
         .where((pw) => pw.soundId == soundId)
         .forEach((playingWrapper) {
-      playingWrapper.gainNode.gain?.value = volumeLeft;
+      if (volumeRight != null)
+        playingWrapper.gainNode.gain.value = volumeLeft! as num;
     });
   }
 
@@ -186,7 +189,7 @@ class _AudioContextWrapper {
       int streamId, double? volumeLeft, double? volumeRight) async {
     _PlayingAudioWrapper? playingWrapper = _playedAudioCache[streamId];
     if (playingWrapper != null) {
-      playingWrapper.gainNode.gain?.value = volumeLeft;
+      playingWrapper.gainNode.gain.value = volumeLeft as num;
       _CachedAudioSettings? cachedAudio = _cache[playingWrapper.soundId];
       if (volumeLeft != null) cachedAudio?.volumeLeft = volumeLeft;
       if (volumeRight != null) cachedAudio?.volumeRight = volumeRight;
@@ -196,7 +199,7 @@ class _AudioContextWrapper {
   Future<void> setStreamRate(int streamId, double rate) async {
     _PlayingAudioWrapper? playingWrapper = _playedAudioCache[streamId];
     if (playingWrapper != null) {
-      playingWrapper.sourceNode.playbackRate?.value = rate;
+      playingWrapper.sourceNode.playbackRate.value = rate;
     }
   }
 
@@ -211,16 +214,19 @@ class _AudioContextWrapper {
 }
 
 class _CachedAudioSettings {
-  final audio.AudioBuffer buffer;
+  final AudioBuffer buffer;
   double volumeLeft;
   double volumeRight;
-  _CachedAudioSettings(
-      {required this.buffer, this.volumeLeft = 1.0, this.volumeRight = 1.0});
+  _CachedAudioSettings({
+    required this.buffer,
+    this.volumeLeft = 1.0,
+    this.volumeRight = 1.0,
+  });
 }
 
 class _PlayingAudioWrapper {
-  final audio.AudioBufferSourceNode sourceNode;
-  final audio.GainNode gainNode;
+  final AudioBufferSourceNode sourceNode;
+  final GainNode gainNode;
   final StreamSubscription? subscription;
   final int soundId;
   const _PlayingAudioWrapper(
