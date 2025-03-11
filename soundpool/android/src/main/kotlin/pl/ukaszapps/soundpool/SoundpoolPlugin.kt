@@ -4,7 +4,6 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.SoundPool
-import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -14,10 +13,8 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import io.flutter.plugin.common.PluginRegistry.Registrar
 import java.io.File
 import java.io.FileOutputStream
-import java.net.URI
 import java.util.concurrent.*
 
 
@@ -27,13 +24,6 @@ internal val uiThreadHandler: Handler = Handler(Looper.getMainLooper())
 
 class SoundpoolPlugin : MethodCallHandler, FlutterPlugin {
     companion object {
-        @Suppress("unused")
-        @JvmStatic
-        fun registerWith(registrar: Registrar) {
-            var pool = SoundpoolPlugin()
-            pool.onRegister(registrar.context(), registrar.messenger())
-        }
-
         private const val CHANNEL_NAME = "pl.ukaszapps/soundpool"
     }
 
@@ -96,7 +86,6 @@ class SoundpoolPlugin : MethodCallHandler, FlutterPlugin {
         wrappers.forEach { it.dispose() }
         wrappers.clear()
     }
-
 }
 
 internal data class VolumeInfo(val left: Float = 1.0f, val right: Float = 1.0f);
