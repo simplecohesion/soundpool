@@ -148,7 +148,7 @@ packages:
     dependency: transitive
     description: flutter
     source: sdk
-    version: "0.0.99"
+    version: "0.0.0"
   soundpool_platform_interface:
     dependency: "direct main"
     description:
